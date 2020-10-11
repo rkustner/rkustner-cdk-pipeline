@@ -16,17 +16,28 @@ export class CdkpipelinesDemoStack extends Stack {
     super(scope, id, props);
 
     // The Lambda function that contains the functionality
-    const handler = new lambda.Function(this, 'Lambda', {
+    const handler1 = new lambda.Function(this, 'Lambda', {
       runtime: lambda.Runtime.NODEJS_12_X,
       handler: 'handler.handler',
       code: lambda.Code.fromAsset(path.resolve(__dirname, 'lambda')),
+    });
+    const handler2 = new lambda.Function(this, 'Lambda2', {
+      runtime: lambda.Runtime.NODEJS_12_X,
+      handler: 'handler.handler',
+      code: lambda.Code.fromAsset(path.resolve(__dirname, 'lambda2')),
     });
 
     // An API Gateway to make the Lambda web-accessible
     const gw = new apigw.LambdaRestApi(this, 'Gateway', {
       description: 'Endpoint for a simple Lambda-powered web service',
-      handler,
+      handler: handler1,
+      proxy: false
     });
+
+    const function1 = gw.root.addResource('one');
+    function1.addMethod('GET', new apigw.LambdaIntegration(handler1))
+    const function2 = gw.root.addResource('two');
+    function2.addMethod('GET', new apigw.LambdaIntegration(handler2))
 
     this.urlOutput = new CfnOutput(this, 'Url', {
       value: gw.url,
